@@ -39,6 +39,21 @@ type MissionDoc = {
   [key: string]: unknown;
 };
 
+type ActiveAgent = { matriculeAgent: string; agent: string };
+
+function formatDateOnly(ts: unknown): string {
+  let d: Date | null = null;
+  const anyTs = ts as any;
+  if (anyTs?.toDate && typeof anyTs.toDate === 'function') d = anyTs.toDate();
+  if (!d && (typeof anyTs === 'string' || typeof anyTs === 'number')) {
+    const dd = new Date(anyTs);
+    if (!Number.isNaN(dd.getTime())) d = dd;
+  }
+  if (!d) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+}
+
 type MissionPhotoEntry = { zoneKey: string; zoneLabel: string; url: string };
 
 async function resolveMissionDocumentId(
@@ -177,6 +192,9 @@ export default function FicheDetail() {
 
   const [loading, setLoading] = useState(true);
   const [docData, setDocData] = useState<MissionDoc | null>(null);
+  const [activeAgents, setActiveAgents] = useState<ActiveAgent[]>([]);
+  const [agentsLoading, setAgentsLoading] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState('');
   const [agentName, setAgentName] = useState('');
   const [agentMatricule, setAgentMatricule] = useState('');
   const [agentTelephone, setAgentTelephone] = useState('');
@@ -258,7 +276,32 @@ export default function FicheDetail() {
     };
   }, [id, docData]);
 
-  const alreadyAssigned = !!docData?.agent && (docData?.statut === 'assignée' || docData?.statut === 'livrée');
+  useEffect(() => {
+    let mounted = true;
+    async function loadActiveAgents() {
+      setAgentsLoading(true);
+      try {
+        const q = query(collection(db, 'agents'), where('statut', '==', 'actif'));
+        const snap = await getDocs(q);
+        const list: ActiveAgent[] = snap.docs
+          .map((d) => d.data() as any)
+          .map((a) => ({
+            matriculeAgent: String(a.matriculeAgent || '').trim(),
+            agent: String(a.agent || '').trim(),
+          }))
+          .filter((a) => a.matriculeAgent && a.agent);
+        if (mounted) setActiveAgents(list);
+      } finally {
+        if (mounted) setAgentsLoading(false);
+      }
+    }
+    loadActiveAgents();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const alreadyAssigned = !!docData?.agent && !!docData?.matriculeAgent;
 
   const descriptionEntries = useMemo(() => {
     if (!docData) return [];
@@ -266,6 +309,8 @@ export default function FicheDetail() {
       'timestamp',
       'statut',
       'agent',
+      'matriculeAgent',
+      'telephoneAgent',
       'dateAssignation',
     ]);
     const entries = Object.entries(docData)
@@ -275,33 +320,31 @@ export default function FicheDetail() {
   }, [docData]);
 
   async function onAssign() {
-    if (!id) return;
-    const trimmed = agentName.trim();
-    const trimmedMatricule = agentMatricule.trim();
-    const trimmedTelephone = agentTelephone.trim();
-    if (!trimmed || !trimmedMatricule || !trimmedTelephone) return;
+    if (!id || !selectedAgent) return;
+    const found = activeAgents.find((a) => a.matriculeAgent === selectedAgent);
+    if (!found) return;
     setAssigning(true);
+    setAssignSuccess(false);
     try {
       await updateDoc(doc(db, 'fiches_mission', id), {
         statut: 'assignée',
-        agent: trimmed,
-        matriculeAgent: trimmedMatricule,
-        telephoneAgent: trimmedTelephone,
+        agent: found.agent,
+        matriculeAgent: found.matriculeAgent,
         dateAssignation: serverTimestamp(),
       });
-      setAssignSuccess(true);
       setDocData((prev) =>
         prev
           ? {
               ...prev,
               statut: 'assignée',
-              agent: trimmed,
-              matriculeAgent: trimmedMatricule,
-              telephoneAgent: trimmedTelephone,
+              agent: found.agent,
+              matriculeAgent: found.matriculeAgent,
               dateAssignation: new Date().toISOString(),
             }
           : prev
       );
+      setAssignSuccess(true);
+      window.setTimeout(() => setAssignSuccess(false), 4000);
     } finally {
       setAssigning(false);
     }
@@ -410,110 +453,87 @@ export default function FicheDetail() {
             </Card>
 
             <Card title="Assignation agent">
-              {alreadyAssigned ? (
-                <>
-                  <div style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A', marginBottom: '12px' }}>
-                    Agent assigné
+              <div
+                style={{
+                  backgroundColor: 'white',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 8,
+                  padding: 24,
+                  marginTop: 24,
+                }}
+              >
+                <h3 style={{ fontSize: 20, fontWeight: 'bold', color: '#1a1a1a', marginBottom: 16 }}>Assignation agent</h3>
+                {alreadyAssigned && (
+                  <p style={{ fontSize: 16, color: '#1a1a1a', marginBottom: 12, fontWeight: 700 }}>
+                    Agent actuel : {docData?.matriculeAgent} — {docData?.agent}
+                    {docData?.dateAssignation ? ` — assigné le ${formatDateOnly(docData.dateAssignation)}` : ''}
+                  </p>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <select
+                    value={selectedAgent}
+                    onChange={(e) => setSelectedAgent(e.target.value)}
+                    disabled={agentsLoading || activeAgents.length === 0}
+                    style={{
+                      border: '1px solid #d1d5db',
+                      borderRadius: 6,
+                      padding: '8px 12px',
+                      fontSize: 16,
+                      color: '#1a1a1a',
+                      backgroundColor: 'white',
+                      outline: 'none',
+                    }}
+                  >
+                    <option value="">
+                      {agentsLoading
+                        ? 'Chargement...'
+                        : activeAgents.length === 0
+                          ? 'Aucun agent disponible'
+                          : 'Sélectionner un agent'}
+                    </option>
+                    {activeAgents.map((a) => (
+                      <option key={a.matriculeAgent} value={a.matriculeAgent}>
+                        {a.matriculeAgent} — {a.agent}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    type="button"
+                    onClick={onAssign}
+                    disabled={assigning || agentsLoading || activeAgents.length === 0 || !selectedAgent}
+                    style={{
+                      backgroundColor: '#8B1A1A',
+                      color: 'white',
+                      borderRadius: 6,
+                      padding: '10px 20px',
+                      fontSize: 16,
+                      fontWeight: 700,
+                      border: 'none',
+                      cursor: assigning || agentsLoading || activeAgents.length === 0 || !selectedAgent ? 'not-allowed' : 'pointer',
+                      opacity: assigning || agentsLoading ? 0.9 : 1,
+                    }}
+                  >
+                    {assigning ? 'Assignation…' : 'Assigner'}
+                  </button>
+                </div>
+
+                {assignSuccess ? (
+                  <div
+                    style={{
+                      marginTop: 14,
+                      color: '#166534',
+                      backgroundColor: '#f0fdf4',
+                      borderRadius: 6,
+                      padding: '8px 12px',
+                      fontSize: 16,
+                      fontWeight: 700,
+                    }}
+                  >
+                    Agent assigné avec succès
                   </div>
-                  <Row label="Nom de l'agent" value={String(docData.agent || '')} />
-                  <Row label="Matricule de l'agent" value={String(docData.matriculeAgent || '')} />
-                  <Row label="Téléphone de l'agent" value={String(docData.telephoneAgent || '')} />
-                  <Row label="Date d'assignation" value={formatDate(docData.dateAssignation)} />
-                </>
-              ) : docData.statut === 'livrée' ? (
-                <div style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A' }}>Mission livrée</div>
-              ) : (
-                <>
-                  <div style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A', marginBottom: '12px' }}>
-                    Assigner un agent
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '12px', alignItems: 'end' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
-                      <label style={{ display: 'block' }}>
-                        <div style={{ fontSize: '20px', fontWeight: 600, color: '#1A1A1A', marginBottom: '8px' }}>
-                        Nom de l&apos;agent
-                        </div>
-                        <input
-                          value={agentName}
-                          onChange={(e) => setAgentName(e.target.value)}
-                          style={{
-                            width: '100%',
-                            border: '1px solid #1A1A1A',
-                            borderRadius: '6px',
-                            padding: '10px',
-                            fontSize: '20px',
-                            color: '#1A1A1A',
-                            outline: 'none',
-                          }}
-                        />
-                      </label>
-
-                      <label style={{ display: 'block' }}>
-                        <div style={{ fontSize: '20px', fontWeight: 600, color: '#1A1A1A', marginBottom: '8px' }}>
-                          Matricule de l&apos;agent
-                        </div>
-                        <input
-                          value={agentMatricule}
-                          onChange={(e) => setAgentMatricule(e.target.value)}
-                          style={{
-                            width: '100%',
-                            border: '1px solid #1A1A1A',
-                            borderRadius: '6px',
-                            padding: '10px',
-                            fontSize: '20px',
-                            color: '#1A1A1A',
-                            outline: 'none',
-                          }}
-                        />
-                      </label>
-
-                      <label style={{ display: 'block' }}>
-                        <div style={{ fontSize: '20px', fontWeight: 600, color: '#1A1A1A', marginBottom: '8px' }}>
-                          Téléphone de l&apos;agent
-                        </div>
-                        <input
-                          value={agentTelephone}
-                          onChange={(e) => setAgentTelephone(e.target.value)}
-                          style={{
-                            width: '100%',
-                            border: '1px solid #1A1A1A',
-                            borderRadius: '6px',
-                            padding: '10px',
-                            fontSize: '20px',
-                            color: '#1A1A1A',
-                            outline: 'none',
-                          }}
-                        />
-                      </label>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={onAssign}
-                      disabled={assigning || assignSuccess || !agentName.trim() || !agentMatricule.trim() || !agentTelephone.trim()}
-                      style={{
-                        background: '#1E5FA6',
-                        color: '#FFFFFF',
-                        fontSize: '20px',
-                        fontWeight: 700,
-                        borderRadius: '6px',
-                        padding: '12px 24px',
-                        border: 'none',
-                        cursor: assigning || assignSuccess ? 'not-allowed' : 'pointer',
-                        opacity: assigning || assignSuccess ? 0.8 : 1,
-                      }}
-                    >
-                      {assigning ? 'Assignation…' : 'Assigner'}
-                    </button>
-                  </div>
-
-                  {assignSuccess ? (
-                    <div style={{ marginTop: '12px', fontSize: '20px', fontWeight: 700, color: '#065F46' }}>
-                      Agent assigné avec succès
-                    </div>
-                  ) : null}
-                </>
-              )}
+                ) : null}
+              </div>
             </Card>
 
             <Card title="Photos de la mission">
