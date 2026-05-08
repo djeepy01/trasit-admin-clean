@@ -195,9 +195,6 @@ export default function FicheDetail() {
   const [activeAgents, setActiveAgents] = useState<ActiveAgent[]>([]);
   const [agentsLoading, setAgentsLoading] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState('');
-  const [agentName, setAgentName] = useState('');
-  const [agentMatricule, setAgentMatricule] = useState('');
-  const [agentTelephone, setAgentTelephone] = useState('');
   const [assigning, setAssigning] = useState(false);
   const [assignSuccess, setAssignSuccess] = useState(false);
   const [missionPhotosLoading, setMissionPhotosLoading] = useState(false);
