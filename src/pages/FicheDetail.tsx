@@ -3,7 +3,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  limit,
   query,
   serverTimestamp,
   updateDoc,
@@ -33,9 +32,8 @@ type MissionDoc = {
   code?: string;
   telephoneAgent?: string;
   dateAssignation?: unknown;
-  /** Si présent sur la fiche : ID du document `missions` lié. */
-  missionId?: string;
-  linkedMissionId?: string;
+  /** Objet zone → URL (soumission agent). */
+  photos?: Record<string, string>;
   [key: string]: unknown;
 };
 
@@ -55,33 +53,6 @@ function formatDateOnly(ts: unknown): string {
 }
 
 type MissionPhotoEntry = { zoneKey: string; zoneLabel: string; url: string };
-
-async function resolveMissionDocumentId(
-  ficheDocId: string,
-  ficheData: MissionDoc | null
-): Promise<string | null> {
-  if (!ficheDocId) return null;
-
-  const fromFiche =
-    (typeof ficheData?.missionId === 'string' && ficheData.missionId.trim()) ||
-    (typeof ficheData?.linkedMissionId === 'string' && ficheData.linkedMissionId.trim());
-  if (fromFiche) {
-    const snap = await getDoc(doc(db, 'missions', fromFiche.trim()));
-    if (snap.exists()) return snap.id;
-  }
-
-  const direct = await getDoc(doc(db, 'missions', ficheDocId));
-  if (direct.exists()) return direct.id;
-
-  const linkFields = ['ficheId', 'ficheMissionId', 'fichesMissionId', 'sourceFicheId', 'adminFicheId'];
-  for (const field of linkFields) {
-    const q = query(collection(db, 'missions'), where(field, '==', ficheDocId), limit(1));
-    const snap = await getDocs(q);
-    if (!snap.empty) return snap.docs[0].id;
-  }
-
-  return null;
-}
 
 function formatZoneLabelFromKey(key: string): string {
   const s = key.replace(/_/g, ' ').trim();
@@ -197,8 +168,6 @@ export default function FicheDetail() {
   const [selectedAgent, setSelectedAgent] = useState('');
   const [assigning, setAssigning] = useState(false);
   const [assignSuccess, setAssignSuccess] = useState(false);
-  const [missionPhotosLoading, setMissionPhotosLoading] = useState(false);
-  const [missionPhotoEntries, setMissionPhotoEntries] = useState<MissionPhotoEntry[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -219,59 +188,6 @@ export default function FicheDetail() {
       mounted = false;
     };
   }, [id]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadMissionPhotos() {
-      if (!id || !docData) {
-        setMissionPhotoEntries([]);
-        return;
-      }
-
-      setMissionPhotosLoading(true);
-      try {
-        const missionDocId = await resolveMissionDocumentId(id, docData);
-        if (cancelled) return;
-
-        if (!missionDocId) {
-          setMissionPhotoEntries([]);
-          return;
-        }
-
-        const missionSnap = await getDoc(doc(db, 'missions', missionDocId));
-        if (cancelled) return;
-
-        if (!missionSnap.exists()) {
-          setMissionPhotoEntries([]);
-          return;
-        }
-
-        const raw = missionSnap.data()?.photos as unknown;
-        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-          setMissionPhotoEntries([]);
-          return;
-        }
-
-        const entries: MissionPhotoEntry[] = Object.entries(raw as Record<string, unknown>)
-          .filter(([, v]) => typeof v === 'string' && (v as string).trim() !== '')
-          .map(([zoneKey, v]) => ({
-            zoneKey,
-            zoneLabel: formatZoneLabelFromKey(zoneKey),
-            url: String(v).trim(),
-          }));
-
-        setMissionPhotoEntries(entries);
-      } finally {
-        if (!cancelled) setMissionPhotosLoading(false);
-      }
-    }
-
-    loadMissionPhotos();
-    return () => {
-      cancelled = true;
-    };
-  }, [id, docData]);
 
   useEffect(() => {
     let mounted = true;
@@ -300,6 +216,19 @@ export default function FicheDetail() {
 
   const alreadyAssigned = !!docData?.nom && !!docData?.code;
 
+  const photoEntries = useMemo((): MissionPhotoEntry[] => {
+    if (!docData) return [];
+    const raw = docData.photos as unknown;
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return [];
+    return Object.entries(raw as Record<string, unknown>)
+      .filter(([, v]) => typeof v === 'string' && (v as string).trim() !== '')
+      .map(([zoneKey, v]) => ({
+        zoneKey,
+        zoneLabel: formatZoneLabelFromKey(zoneKey),
+        url: String(v).trim(),
+      }));
+  }, [docData]);
+
   const descriptionEntries = useMemo(() => {
     if (!docData) return [];
     const keysToSkip = new Set([
@@ -309,6 +238,8 @@ export default function FicheDetail() {
       'code',
       'telephoneAgent',
       'dateAssignation',
+      'photos',
+      'gps',
     ]);
     const entries = Object.entries(docData)
       .filter(([k, v]) => !keysToSkip.has(k) && v !== undefined && v !== null && String(v).trim() !== '')
@@ -534,9 +465,7 @@ export default function FicheDetail() {
             </Card>
 
             <Card title="Photos de la mission">
-              {missionPhotosLoading ? (
-                <div style={{ fontSize: '20px', fontWeight: 600, color: '#1A1A1A' }}>Chargement des photos…</div>
-              ) : missionPhotoEntries.length === 0 ? (
+              {photoEntries.length === 0 ? (
                 <div style={{ fontSize: '20px', fontWeight: 600, color: '#1A1A1A' }}>Aucune photo disponible.</div>
               ) : (
                 <div
@@ -546,7 +475,7 @@ export default function FicheDetail() {
                     gap: '16px',
                   }}
                 >
-                  {missionPhotoEntries.map((item) => (
+                  {photoEntries.map((item) => (
                     <div key={item.zoneKey} style={{ minWidth: 0 }}>
                       <div
                         style={{
