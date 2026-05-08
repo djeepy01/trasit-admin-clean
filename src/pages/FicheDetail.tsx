@@ -29,8 +29,8 @@ type MissionDoc = {
   onSiteContactName?: string;
   onSiteContactPhone?: string;
   frequency?: string;
-  agent?: string;
-  matriculeAgent?: string;
+  nom?: string;
+  code?: string;
   telephoneAgent?: string;
   dateAssignation?: unknown;
   /** Si présent sur la fiche : ID du document `missions` lié. */
@@ -39,7 +39,7 @@ type MissionDoc = {
   [key: string]: unknown;
 };
 
-type ActiveAgent = { matriculeAgent: string; agent: string };
+type ActiveAgent = { code: string; nom: string };
 
 function formatDateOnly(ts: unknown): string {
   let d: Date | null = null;
@@ -283,10 +283,10 @@ export default function FicheDetail() {
         const list: ActiveAgent[] = snap.docs
           .map((d) => d.data() as any)
           .map((a) => ({
-            matriculeAgent: String(a.matriculeAgent || '').trim(),
-            agent: String(a.agent || '').trim(),
+            code: String(a.code || '').trim(),
+            nom: String(a.nom || '').trim(),
           }))
-          .filter((a) => a.matriculeAgent && a.agent);
+          .filter((a) => a.code && a.nom);
         if (mounted) setActiveAgents(list);
       } finally {
         if (mounted) setAgentsLoading(false);
@@ -298,15 +298,15 @@ export default function FicheDetail() {
     };
   }, []);
 
-  const alreadyAssigned = !!docData?.agent && !!docData?.matriculeAgent;
+  const alreadyAssigned = !!docData?.nom && !!docData?.code;
 
   const descriptionEntries = useMemo(() => {
     if (!docData) return [];
     const keysToSkip = new Set([
       'timestamp',
       'statut',
-      'agent',
-      'matriculeAgent',
+      'nom',
+      'code',
       'telephoneAgent',
       'dateAssignation',
     ]);
@@ -318,15 +318,15 @@ export default function FicheDetail() {
 
   async function onAssign() {
     if (!id || !selectedAgent) return;
-    const found = activeAgents.find((a) => a.matriculeAgent === selectedAgent);
+    const found = activeAgents.find((a) => a.code === selectedAgent);
     if (!found) return;
     setAssigning(true);
     setAssignSuccess(false);
     try {
       await updateDoc(doc(db, 'fiches_mission', id), {
         statut: 'assignée',
-        agent: found.agent,
-        matriculeAgent: found.matriculeAgent,
+        nom: found.nom,
+        code: found.code,
         dateAssignation: serverTimestamp(),
       });
       setDocData((prev) =>
@@ -334,8 +334,8 @@ export default function FicheDetail() {
           ? {
               ...prev,
               statut: 'assignée',
-              agent: found.agent,
-              matriculeAgent: found.matriculeAgent,
+              nom: found.nom,
+              code: found.code,
               dateAssignation: new Date().toISOString(),
             }
           : prev
@@ -462,7 +462,7 @@ export default function FicheDetail() {
                 <h3 style={{ fontSize: 20, fontWeight: 'bold', color: '#1a1a1a', marginBottom: 16 }}>Assignation agent</h3>
                 {alreadyAssigned && (
                   <p style={{ fontSize: 16, color: '#1a1a1a', marginBottom: 12, fontWeight: 700 }}>
-                    Agent actuel : {docData?.matriculeAgent} — {docData?.agent}
+                    Agent actuel : {docData?.code} — {docData?.nom}
                     {docData?.dateAssignation ? ` — assigné le ${formatDateOnly(docData.dateAssignation)}` : ''}
                   </p>
                 )}
@@ -489,8 +489,8 @@ export default function FicheDetail() {
                           : 'Sélectionner un agent'}
                     </option>
                     {activeAgents.map((a) => (
-                      <option key={a.matriculeAgent} value={a.matriculeAgent}>
-                        {a.matriculeAgent} — {a.agent}
+                      <option key={a.code} value={a.code}>
+                        {a.code} — {a.nom}
                       </option>
                     ))}
                   </select>
