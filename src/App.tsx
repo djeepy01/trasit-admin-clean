@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import FicheDetail from './pages/FicheDetail';
 import Login from './pages/Login';
+import RapportPage from './pages/RapportPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
@@ -25,6 +26,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/rapport/:id" element={<RapportPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

@@ -34,6 +34,11 @@ type MissionDoc = {
   dateAssignation?: unknown;
   /** Objet zone → URL (soumission agent). */
   photos?: Record<string, string>;
+  avisTRASIT?: string;
+  typeMission?: string;
+  prestataire?: string;
+  adresse?: string;
+  observationsAgent?: string;
   [key: string]: unknown;
 };
 
@@ -168,6 +173,8 @@ export default function FicheDetail() {
   const [selectedAgent, setSelectedAgent] = useState('');
   const [assigning, setAssigning] = useState(false);
   const [assignSuccess, setAssignSuccess] = useState(false);
+  const [avisTRASIT, setAvisTRASIT] = useState<string>('');
+  const [generationEnCours, setGenerationEnCours] = useState<boolean>(false);
 
   useEffect(() => {
     let mounted = true;
@@ -178,7 +185,10 @@ export default function FicheDetail() {
         const ref = doc(db, 'fiches_mission', id);
         const snap = await getDoc(ref);
         if (!mounted) return;
-        setDocData(snap.exists() ? (snap.data() as MissionDoc) : null);
+        const raw = snap.exists() ? (snap.data() as MissionDoc) : null;
+        setDocData(raw);
+        if (typeof raw?.avisTRASIT === 'string') setAvisTRASIT(raw.avisTRASIT);
+        else setAvisTRASIT('');
       } finally {
         if (mounted) setLoading(false);
       }
@@ -240,6 +250,7 @@ export default function FicheDetail() {
       'dateAssignation',
       'photos',
       'gps',
+      'avisTRASIT',
     ]);
     const entries = Object.entries(docData)
       .filter(([k, v]) => !keysToSkip.has(k) && v !== undefined && v !== null && String(v).trim() !== '')
@@ -275,6 +286,63 @@ export default function FicheDetail() {
       window.setTimeout(() => setAssignSuccess(false), 4000);
     } finally {
       setAssigning(false);
+    }
+  }
+
+  async function generateAvisTRASIT() {
+    if (!docData) return;
+    setGenerationEnCours(true);
+    try {
+      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+      console.log('Clé API présente:', !!apiKey);
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [
+            {
+              role: 'user',
+              content: `Tu es TRASIT, service de vérification terrain indépendant. Rédige un avis professionnel factuel et neutre pour le client. Type de mission : ${docData.typeMission}. Prestataire : ${docData.prestataire}. Adresse : ${docData.adresse}. Observations agent : ${docData.observationsAgent || 'Aucune'}. Maximum 5 phrases. Terminer par une recommandation concrète.`,
+            },
+          ],
+        }),
+      });
+
+      console.log('Status réponse:', response.status);
+      const text = await response.text();
+      console.log('Réponse brute:', text);
+
+      if (!response.ok) {
+        alert('Erreur API : ' + response.status + ' — ' + text);
+        return;
+      }
+
+      const data = JSON.parse(text);
+      setAvisTRASIT(data.content[0].text);
+    } catch (error: any) {
+      console.error('Erreur:', error);
+      alert('Erreur fetch : ' + (error.message || JSON.stringify(error)));
+    } finally {
+      setGenerationEnCours(false);
+    }
+  }
+
+  async function sauvegarderAvisTRASIT() {
+    if (!id) return;
+    try {
+      await updateDoc(doc(db, 'fiches_mission', id), { avisTRASIT });
+      setDocData((prev) => (prev ? { ...prev, avisTRASIT } : prev));
+    } catch (e) {
+      console.error(e);
+      window.alert("La sauvegarde de l'avis a échoué.");
     }
   }
 
@@ -510,6 +578,60 @@ export default function FicheDetail() {
                 </div>
               )}
             </Card>
+
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 20, fontWeight: '700', color: '#111111', marginBottom: 12 }}>Avis TRASIT</div>
+              <button
+                type="button"
+                onClick={generateAvisTRASIT}
+                disabled={generationEnCours}
+                style={{
+                  background: '#6B1E2E',
+                  color: 'white',
+                  fontSize: 16,
+                  padding: '10px 20px',
+                  borderRadius: 6,
+                  border: 'none',
+                  cursor: generationEnCours ? 'not-allowed' : 'pointer',
+                  opacity: generationEnCours ? 0.85 : 1,
+                }}
+              >
+                {generationEnCours ? 'Génération en cours...' : "Générer l'avis IA"}
+              </button>
+              <textarea
+                value={avisTRASIT}
+                onChange={(e) => setAvisTRASIT(e.target.value)}
+                style={{
+                  borderColor: '#111111',
+                  borderWidth: 1,
+                  borderStyle: 'solid',
+                  borderRadius: 6,
+                  padding: 12,
+                  fontSize: 16,
+                  minHeight: 120,
+                  width: '100%',
+                  marginTop: 12,
+                  boxSizing: 'border-box',
+                  fontFamily: 'inherit',
+                }}
+              />
+              <button
+                type="button"
+                onClick={sauvegarderAvisTRASIT}
+                style={{
+                  background: '#111111',
+                  color: 'white',
+                  fontSize: 16,
+                  padding: '10px 20px',
+                  borderRadius: 6,
+                  marginTop: 8,
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                Sauvegarder l&apos;avis
+              </button>
+            </div>
           </>
         )}
       </main>
