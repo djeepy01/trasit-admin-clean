@@ -1,0 +1,89 @@
+# CURSORRULES — TRASIT ADMIN
+# Projet : trasit-admin — Dashboard interne Jean Paul
+# Chemin : C:\Users\DELL\Desktop\trasit-web\trasit-admin\.cursorrules
+
+---
+
+## PROJET
+Nom : TRASIT Admin — Dashboard de gestion des fiches de mission
+Accès : Jean Paul uniquement (protégé par UID Firebase hardcodé)
+URL : trasit-admin.netlify.app
+
+## STACK
+React + Vite + TypeScript + Tailwind CSS
+Firebase Auth + Firestore + Storage (projet : trasit-backend, EUROPE-WEST1)
+Déploiement : Netlify (auto-deploy depuis master)
+
+## COLLECTION FIRESTORE PRINCIPALE
+fiches_mission — champs clés :
+  nomClient, emailClient, missionType, niveauService, prestataire,
+  adresse, district, onSiteContactName, dateAssignation, statut,
+  photos {}, observationsAgent, avisTRASIT, agentCode
+
+## COLLECTION AGENTS
+agents — champs clés :
+  code, nom, statut (actif/inactif), vertical, dateInscription
+
+## FICHIERS PROTÉGÉS — NE JAMAIS MODIFIER SANS VALIDATION
+- src/firebase.ts
+- src/auth/ProtectedRoute.tsx
+- .env
+- .env.local
+- netlify.toml
+
+## ÉTAT ACTUEL (13 Mai 2026)
+✅ Dashboard fiches_mission opérationnel
+✅ Assignation agent depuis dropdown Firestore
+✅ Bloc Avis TRASIT avec sauvegarde Firestore
+✅ Affichage photos galerie 2 colonnes
+⏳ Bouton "Générer l'avis IA" — en attente crédits Anthropic API
+⏳ Statut fiche après soumission agent — à vérifier passe bien à "soumise"
+
+## PRIORITÉS — METTRE À JOUR À CHAQUE SESSION
+1. Vérifier statut "soumise" après soumission agent
+2. Activer génération IA avis TRASIT (post-crédits Anthropic)
+
+---
+
+## RÈGLES ABSOLUES
+
+### Comportement
+- Une modification à la fois — ne jamais enchaîner sans validation explicite
+- Toujours proposer un plan avant d'agir
+- Toujours nommer explicitement les erreurs trouvées
+- Mode Ask par défaut — Agent uniquement pour modifications isolées sur un seul fichier
+- Commit Git AVANT toute modification
+
+### Structure de chaque prompt
+- Toujours spécifier le chemin absolu complet du fichier ciblé
+- Toujours inclure une section NE PAS TOUCHER
+- Toujours préciser Ask ou Agent en début de prompt
+
+### Couleurs — INTERDICTIONS STRICTES
+- Zéro class Tailwind : text-gray-400 / text-gray-500 / text-gray-600
+- Zéro valeur hex : #666666 / #999999 / #888888
+- Minimum #444444 pour tout texte secondaire
+
+### Palette autorisée
+- Bordeaux principal  : #6B1E2E
+- Noir texte          : #1A1A1A
+- Texte secondaire    : #444444
+- Fond secondaire     : #F7F5F2
+- Bordures            : #DDDDDD
+
+### Tailles de police — MINIMUMS ABSOLUS
+- Textes courants : 20px minimum
+- Labels / méta   : 14px minimum
+- Corps           : 16px minimum
+- Titres          : 18px minimum
+- Aucun texte en dessous de 14px — sans exception
+
+### Sécurité
+- Zéro clé API en dur dans le code
+- Protection admin par UID hardcodé — jamais par rôle auto-déclaré côté client
+- .env jamais commité
+- Clé Anthropic API dans .env.local uniquement (VITE_ANTHROPIC_API_KEY)
+
+### Déploiement Netlify
+- Regrouper les corrections — un seul push par bloc de travail
+- Push = déploiement = crédits consommés
