@@ -41,7 +41,7 @@ export default function App() {
         );
       }
       case 'agents':
-        return <Agents />;
+        return <Agents agents={mockAgents} />;
       case 'statistiques':
         return <Statistiques />;
       default:
