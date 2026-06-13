@@ -1,7 +1,6 @@
 import { ChevronRight } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { mockFiches } from '../data/mockData';
-import type { FicheStatus, FicheType } from '../types';
+import type { Fiche, FicheStatus, FicheType } from '../types';
 
 const COUNTERS: { key: FicheStatus; label: string; dot: string }[] = [
   { key: 'Nouvelle', label: 'Nouvelles', dot: '#378ADD' },
@@ -30,20 +29,21 @@ function statusBadge(status: FicheStatus): { bg: string; color: string } {
 }
 
 type FichesProps = {
+  fiches: Fiche[];
   onOpenFiche: (id: string) => void;
 };
 
-export default function Fiches({ onOpenFiche }: FichesProps) {
+export default function Fiches({ fiches, onOpenFiche }: FichesProps) {
   const [activeCounter, setActiveCounter] = useState<FicheStatus | null>(null);
   const [activeVertical, setActiveVertical] = useState<FicheType | null>(null);
 
   const filtered = useMemo(() => {
-    return mockFiches.filter((f) => {
+    return fiches.filter((f) => {
       if (activeCounter && f.status !== activeCounter) return false;
       if (activeVertical && f.type !== activeVertical) return false;
       return true;
     });
-  }, [activeCounter, activeVertical]);
+  }, [fiches, activeCounter, activeVertical]);
 
   const subtitle = `${filtered.length} fiche${filtered.length !== 1 ? 's' : ''} affichée${filtered.length !== 1 ? 's' : ''}`;
 

@@ -15,15 +15,15 @@ interface FieldProps { label: string; value: string; }
 function Field({ label, value }: FieldProps) {
   return (
     <div style={{ marginBottom: 10 }}>
-      <div style={{ fontSize: 12, color: C.textSec, marginBottom: 2 }}>{label}</div>
-      <div style={{ fontSize: 12, fontWeight: 500, color: C.text }}>{value}</div>
+      <div style={{ fontSize: 14, color: C.textSec, marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 16, fontWeight: 500, color: C.text }}>{value}</div>
     </div>
   );
 }
 
 function CardTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontSize: 11, fontWeight: 500, color: C.bordeaux, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 12 }}>
+    <div style={{ fontSize: 14, fontWeight: 500, color: C.bordeaux, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 12 }}>
       {children}
     </div>
   );
@@ -63,7 +63,7 @@ export default function FicheDetail({ fiche, agents, onBack }: FicheDetailProps)
             <Field label="Nom" value={fiche.providerName} />
             <Field label="Email" value={fiche.clientEmail} />
             <Field label="Service" value={fiche.service} />
-            <Field label="Type" value={fiche.type} />
+            <Field label="Type" value={fiche.type.toUpperCase()} />
             <Field label="Adresse" value={fiche.address} />
             <Field label="Contact site" value={fiche.contactSite} />
           </Card>

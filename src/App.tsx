@@ -1,17 +1,88 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import Sidebar from './components/Sidebar';
-import { mockAgents, mockFiches } from './data/mockData';
+import { mockAgents } from './data/mockData';
+import { db } from './firebase';
 import Agents from './screens/Agents';
 import FicheDetail from './screens/FicheDetail';
 import Fiches from './screens/Fiches';
 import Statistiques from './screens/Statistiques';
-import type { Screen } from './types';
+import type { Fiche, Screen } from './types';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('fiches');
   const [selectedFicheId, setSelectedFicheId] = useState<string | null>(null);
+  const [fiches, setFiches] = useState<Fiche[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   const sidebarScreen = screen === 'fiche-detail' ? 'fiches' : screen;
+
+  useEffect(() => {
+    const q = query(collection(db, 'fiches_mission'), orderBy('timestamp', 'desc'));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const next: Fiche[] = snapshot.docs.map((doc) => {
+          const d = doc.data();
+          const photosRaw = d.photos;
+          const photosCount =
+            photosRaw && typeof photosRaw === 'object'
+              ? Object.keys(photosRaw as Record<string, unknown>).length
+              : 0;
+
+          const rawStatus = String(d.statut ?? '');
+          const statusMap: Record<string, Fiche['status']> = {
+            nouvelle: 'Nouvelle',
+            assignée: 'Assignée',
+            assignee: 'Assignée',
+            soumise: 'Soumise',
+            achevée: 'Achevée',
+            achevee: 'Achevée',
+          };
+          const status =
+            statusMap[rawStatus.toLowerCase()] ??
+            (['Nouvelle', 'Assignée', 'Soumise', 'Achevée'].includes(rawStatus)
+              ? (rawStatus as Fiche['status'])
+              : 'Nouvelle');
+
+          const dateRaw = d.dateAssignation;
+          const assignedDate =
+            dateRaw == null
+              ? null
+              : typeof dateRaw === 'object' && 'toDate' in dateRaw
+                ? (dateRaw as { toDate: () => Date }).toDate().toLocaleDateString('fr-FR')
+                : String(dateRaw);
+
+          return {
+            id: doc.id,
+            type: String(d.missionType ?? 'BTP').toUpperCase() as Fiche['type'],
+            status,
+            providerName: String(d.providerName ?? d.prestataire ?? d.nomClient ?? ''),
+            address: String(d.siteAddress ?? d.adresse ?? ''),
+            clientEmail: String(d.emailClient ?? ''),
+            service: String(d.serviceLevel ?? d.niveauService ?? ''),
+            contactSite: String(d.onSiteContactName ?? ''),
+            assignedAgent: d.agentCode ? String(d.agentCode) : null,
+            assignedDate,
+            declaredAnimaux: d.declaredAnimaux as number | undefined,
+            detectedAnimaux: d.detectedAnimaux as number | undefined,
+            avisTransit: String(d.avisTRASIT ?? ''),
+            photos: photosCount,
+          };
+        });
+
+        setFiches(next);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Erreur lecture fiches_mission:', error);
+        setLoading(false);
+      },
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   function handleNavigate(target: 'fiches' | 'agents' | 'statistiques') {
     setSelectedFicheId(null);
@@ -32,12 +103,12 @@ export default function App() {
     switch (screen) {
       case 'fiche-detail': {
         const fiche = selectedFicheId
-          ? mockFiches.find((f) => f.id === selectedFicheId)
+          ? fiches.find((f) => f.id === selectedFicheId)
           : undefined;
         return fiche ? (
           <FicheDetail fiche={fiche} agents={mockAgents} onBack={handleBack} />
         ) : (
-          <Fiches onOpenFiche={handleOpenFiche} />
+          <Fiches fiches={fiches} onOpenFiche={handleOpenFiche} />
         );
       }
       case 'agents':
@@ -45,7 +116,7 @@ export default function App() {
       case 'statistiques':
         return <Statistiques />;
       default:
-        return <Fiches onOpenFiche={handleOpenFiche} />;
+        return <Fiches fiches={fiches} onOpenFiche={handleOpenFiche} />;
     }
   }
 
@@ -54,9 +125,17 @@ export default function App() {
       <Sidebar
         activeScreen={sidebarScreen}
         onNavigate={handleNavigate}
-        totalFiches={mockFiches.length}
+        totalFiches={fiches.length}
       />
-      <main style={{ marginLeft: '220px', flex: 1, minWidth: 0 }}>{renderScreen()}</main>
+      <main style={{ marginLeft: '220px', flex: 1, minWidth: 0 }}>
+        {loading ? (
+          <div style={{ padding: '20px', fontSize: '16px', color: '#444444' }}>
+            Chargement des fiches…
+          </div>
+        ) : (
+          renderScreen()
+        )}
+      </main>
     </div>
   );
 }
