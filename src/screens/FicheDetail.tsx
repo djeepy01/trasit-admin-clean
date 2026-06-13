@@ -15,15 +15,15 @@ interface FieldProps { label: string; value: string; }
 function Field({ label, value }: FieldProps) {
   return (
     <div style={{ marginBottom: 10 }}>
-      <div style={{ fontSize: 14, color: C.textSec, marginBottom: 2 }}>{label}</div>
-      <div style={{ fontSize: 16, fontWeight: 500, color: C.text }}>{value}</div>
+      <div style={{ fontSize: 15, color: C.textSec, marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 500, color: C.text }}>{value}</div>
     </div>
   );
 }
 
 function CardTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontSize: 14, fontWeight: 500, color: C.bordeaux, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 12 }}>
+    <div style={{ fontSize: 15, fontWeight: 500, color: C.bordeaux, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 12 }}>
       {children}
     </div>
   );
@@ -67,10 +67,53 @@ export default function FicheDetail({ fiche, agents, onBack }: FicheDetailProps)
             <Field label="Adresse" value={fiche.address} />
             <Field label="Contact site" value={fiche.contactSite} />
           </Card>
+          <Card style={{ gridColumn: '1 / -1' }}>
+            <CardTitle>Détails mission</CardTitle>
+            {fiche.type === 'BTP' && (
+              <>
+                <Field label="Type de construction" value={fiche.btpConstructionType ?? '—'} />
+                <Field label="Phase déclarée" value={fiche.btpCurrentState ?? '—'} />
+                <Field label="À vérifier" value={fiche.btpToVerify ?? '—'} />
+                <Field label="District" value={fiche.siteDistrict ?? '—'} />
+                <Field label="Instructions" value={fiche.followupSteps ?? '—'} />
+              </>
+            )}
+            {fiche.type === 'AGRO' && fiche.agroExploitationType === 'Élevage' && (
+              <>
+                <Field label="Type d'exploitation" value={fiche.agroExploitationType ?? '—'} />
+                <Field label="Espèce principale" value={fiche.agroSpeciesMain ?? '—'} />
+                <Field label="Espèce (autre)" value={fiche.agroSpeciesOther ?? '—'} />
+                <Field label="Animaux déclarés" value={fiche.agroHeadsDeclared ?? '—'} />
+                <Field label="Stade" value={fiche.agroElevageStage ?? '—'} />
+                <Field label="À vérifier" value={fiche.agroToVerify ?? '—'} />
+                <Field label="District" value={fiche.siteDistrict ?? '—'} />
+                <Field label="Instructions" value={fiche.followupSteps ?? '—'} />
+              </>
+            )}
+            {fiche.type === 'AGRO' && fiche.agroExploitationType !== 'Élevage' && (
+              <>
+                <Field label="Type d'exploitation" value={fiche.agroExploitationType ?? '—'} />
+                <Field label="Type de culture" value={fiche.agroCropType ?? '—'} />
+                <Field label="Superficie (ha)" value={fiche.agroAreaHa ?? '—'} />
+                <Field label="Stade des cultures" value={fiche.agroCultureStage ?? '—'} />
+                <Field label="À vérifier" value={fiche.agroToVerify ?? '—'} />
+                <Field label="District" value={fiche.siteDistrict ?? '—'} />
+                <Field label="Instructions" value={fiche.followupSteps ?? '—'} />
+              </>
+            )}
+            {fiche.type === 'COMMERCE' && (
+              <>
+                <Field label="Type de commerce" value={fiche.commerceType ?? (fiche.commerceTypeOther ?? '—')} />
+                <Field label="À vérifier" value={fiche.commerceToVerify ?? '—'} />
+                <Field label="District" value={fiche.siteDistrict ?? '—'} />
+                <Field label="Instructions" value={fiche.followupSteps ?? '—'} />
+              </>
+            )}
+          </Card>
           <Card>
             <CardTitle>Assignation agent</CardTitle>
             <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 12, color: C.textSec, marginBottom: 4 }}>Agent</div>
+              <div style={{ fontSize: 16, color: C.textSec, marginBottom: 4 }}>Agent</div>
               <select value={selectedAgent} onChange={(e) => setSelectedAgent(e.target.value)} style={{ width: '100%', padding: '7px 10px', border: `0.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, color: C.text, background: C.white, cursor: 'pointer', outline: 'none' }}>
                 <option value="">— Sélectionner un agent —</option>
                 {agents.map((a) => (<option key={a.id} value={a.name}>{a.name} ({a.vertical})</option>))}
@@ -88,24 +131,24 @@ export default function FicheDetail({ fiche, agents, onBack }: FicheDetailProps)
             <CardTitle>Analyse IA</CardTitle>
             <div style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 12, color: C.textSec }}>Animaux détectés / déclarés</span>
-                <span style={{ fontSize: 12, fontWeight: 500, color: C.text }}>{detected} / {declared}</span>
+                <span style={{ fontSize: 16, color: C.textSec }}>Animaux détectés / déclarés</span>
+                <span style={{ fontSize: 16, fontWeight: 500, color: C.text }}>{detected} / {declared}</span>
               </div>
               <div style={{ height: 6, background: C.border, borderRadius: 4, overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${ratio}%`, background: C.bordeaux, borderRadius: 4 }} />
               </div>
-              <div style={{ fontSize: 11, color: C.textSec, marginTop: 4 }}>{ratio}% de correspondance</div>
+              <div style={{ fontSize: 16, color: C.textSec, marginTop: 4 }}>{ratio}% de correspondance</div>
             </div>
             <div style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 12, color: C.textSec }}>Cohérence documents</span>
-                <span style={{ fontSize: 12, fontWeight: 500, color: C.text }}>82 / 100</span>
+                <span style={{ fontSize: 16, color: C.textSec }}>Cohérence documents</span>
+                <span style={{ fontSize: 16, fontWeight: 500, color: C.text }}>82 / 100</span>
               </div>
               <div style={{ height: 6, background: C.border, borderRadius: 4, overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: '82%', background: C.sidebar, borderRadius: 4 }} />
               </div>
             </div>
-            <button style={{ width: '100%', padding: '8px 0', background: C.sidebar, color: C.white, border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+            <button style={{ width: '100%', padding: '8px 0', background: C.sidebar, color: C.white, border: 'none', borderRadius: 6, fontSize: 16, fontWeight: 500, cursor: 'pointer' }}>
               Lancer analyse IA
             </button>
           </Card>

@@ -16,6 +16,35 @@ export interface Fiche {
   detectedAnimaux?: number;
   avisTransit: string;
   photos: number;
+
+  // Champs communs
+  siteDistrict?: string;
+  followupSteps?: string;
+
+  // BTP
+  btpConstructionType?: string;
+  btpCurrentState?: string;
+  btpToVerify?: string;
+
+  // Agrobusiness commun
+  agroExploitationType?: string;
+  agroToVerify?: string;
+
+  // Élevage
+  agroSpeciesMain?: string;
+  agroSpeciesOther?: string;
+  agroHeadsDeclared?: string;
+  agroElevageStage?: string;
+
+  // Agriculture
+  agroCropType?: string;
+  agroAreaHa?: string;
+  agroCultureStage?: string;
+
+  // Commerce
+  commerceType?: string;
+  commerceTypeOther?: string;
+  commerceToVerify?: string;
 }
 export interface Agent {
   id: string;

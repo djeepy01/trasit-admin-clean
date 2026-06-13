@@ -43,10 +43,10 @@ export default function Sidebar({ activeScreen, onNavigate, totalFiches }: Sideb
       }}
     >
       <div style={{ padding: '20px 16px 16px' }}>
-        <div style={{ fontSize: '20px', color: '#fff', fontWeight: 500, lineHeight: 1.2 }}>
+        <div style={{ fontSize: '22px', color: '#fff', fontWeight: 500, lineHeight: 1.2 }}>
           tras<span style={{ color: '#6B1E2E' }}>·</span>it
         </div>
-        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>
+        <div style={{ fontSize: '15px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>
           Administration
         </div>
       </div>
@@ -69,7 +69,7 @@ export default function Sidebar({ activeScreen, onNavigate, totalFiches }: Sideb
                 padding: '10px 16px',
                 border: 'none',
                 cursor: 'pointer',
-                fontSize: '13px',
+                fontSize: '16px',
                 fontWeight: 500,
                 textAlign: 'left',
                 background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
@@ -95,7 +95,7 @@ export default function Sidebar({ activeScreen, onNavigate, totalFiches }: Sideb
           <div style={{ fontSize: '22px', fontWeight: 500, color: '#fff', lineHeight: 1.1 }}>
             {totalFiches}
           </div>
-          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', marginTop: '2px' }}>
+          <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.45)', marginTop: '2px' }}>
             fiches au total
           </div>
         </div>
@@ -116,7 +116,7 @@ export default function Sidebar({ activeScreen, onNavigate, totalFiches }: Sideb
             color: 'rgba(255,255,255,0.5)',
             border: '0.5px solid rgba(255,255,255,0.1)',
             borderRadius: '8px',
-            fontSize: '13px',
+            fontSize: '16px',
             cursor: 'pointer',
           }}
         >

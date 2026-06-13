@@ -69,6 +69,23 @@ export default function App() {
             detectedAnimaux: d.detectedAnimaux as number | undefined,
             avisTransit: String(d.avisTRASIT ?? ''),
             photos: photosCount,
+            siteDistrict: d.siteDistrict ? String(d.siteDistrict) : undefined,
+            followupSteps: d.followupSteps ? String(d.followupSteps) : undefined,
+            btpConstructionType: d.btpConstructionType ? String(d.btpConstructionType) : undefined,
+            btpCurrentState: d.btpCurrentState ? String(d.btpCurrentState) : undefined,
+            btpToVerify: d.btpToVerify ? String(d.btpToVerify) : undefined,
+            agroExploitationType: d.agroExploitationType ? String(d.agroExploitationType) : undefined,
+            agroToVerify: d.agroToVerify ? String(d.agroToVerify) : undefined,
+            agroSpeciesMain: d.agroSpeciesMain ? String(d.agroSpeciesMain) : undefined,
+            agroSpeciesOther: d.agroSpeciesOther ? String(d.agroSpeciesOther) : undefined,
+            agroHeadsDeclared: d.agroHeadsDeclared ? String(d.agroHeadsDeclared) : undefined,
+            agroElevageStage: d.agroElevageStage ? String(d.agroElevageStage) : undefined,
+            agroCropType: d.agroCropType ? String(d.agroCropType) : undefined,
+            agroAreaHa: d.agroAreaHa ? String(d.agroAreaHa) : undefined,
+            agroCultureStage: d.agroCultureStage ? String(d.agroCultureStage) : undefined,
+            commerceType: d.commerceType ? String(d.commerceType) : undefined,
+            commerceTypeOther: d.commerceTypeOther ? String(d.commerceTypeOther) : undefined,
+            commerceToVerify: d.commerceToVerify ? String(d.commerceToVerify) : undefined,
           };
         });
 

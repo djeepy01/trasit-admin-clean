@@ -59,8 +59,8 @@ export default function Fiches({ fiches, onOpenFiche }: FichesProps) {
           justifyContent: 'space-between',
         }}
       >
-        <div style={{ fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>Fiches de mission</div>
-        <div style={{ fontSize: '12px', color: '#444444' }}>{subtitle}</div>
+        <div style={{ fontSize: '16px', fontWeight: 500, color: '#1A1A1A' }}>Fiches de mission</div>
+        <div style={{ fontSize: '15px', color: '#444444' }}>{subtitle}</div>
       </div>
 
       <div style={{ padding: '16px 20px' }}>
@@ -78,7 +78,7 @@ export default function Fiches({ fiches, onOpenFiche }: FichesProps) {
                   gap: '8px',
                   padding: '8px 14px',
                   borderRadius: '8px',
-                  fontSize: '13px',
+                  fontSize: '16px',
                   fontWeight: 500,
                   cursor: 'pointer',
                   background: isActive ? '#1B3A52' : '#fff',
@@ -112,7 +112,7 @@ export default function Fiches({ fiches, onOpenFiche }: FichesProps) {
                 style={{
                   padding: '6px 14px',
                   borderRadius: '999px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   fontWeight: 500,
                   cursor: 'pointer',
                   background: isActive ? '#1B3A52' : '#fff',
@@ -127,7 +127,7 @@ export default function Fiches({ fiches, onOpenFiche }: FichesProps) {
         </div>
 
         {filtered.length === 0 ? (
-          <div style={{ fontSize: '13px', color: '#444444', padding: '20px 0' }}>Aucune fiche trouvée</div>
+          <div style={{ fontSize: '16px', color: '#444444', padding: '20px 0' }}>Aucune fiche trouvée</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {filtered.map((f) => {
@@ -152,7 +152,7 @@ export default function Fiches({ fiches, onOpenFiche }: FichesProps) {
                 >
                   <span
                     style={{
-                      fontSize: '12px',
+                      fontSize: '15px',
                       fontWeight: 600,
                       color: '#1B3A52',
                       background: '#E6F1FB',
@@ -167,7 +167,7 @@ export default function Fiches({ fiches, onOpenFiche }: FichesProps) {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div
                       style={{
-                        fontSize: '13px',
+                        fontSize: '16px',
                         fontWeight: 500,
                         color: '#1A1A1A',
                         overflow: 'hidden',
@@ -179,7 +179,7 @@ export default function Fiches({ fiches, onOpenFiche }: FichesProps) {
                     </div>
                     <div
                       style={{
-                        fontSize: '12px',
+                        fontSize: '15px',
                         color: '#444444',
                         marginTop: '2px',
                         overflow: 'hidden',
@@ -193,7 +193,7 @@ export default function Fiches({ fiches, onOpenFiche }: FichesProps) {
 
                   <span
                     style={{
-                      fontSize: '12px',
+                      fontSize: '15px',
                       fontWeight: 500,
                       background: badge.bg,
                       color: badge.color,
